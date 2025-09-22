@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Masuk — Mata Kreatif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="https://placehold.co/32x32/1e40af/ffffff?text=MK" type="image/png">
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
+        <h1 class="text-2xl font-bold text-blue-800 mb-2">Masuk ke Mata Kreatif</h1>
+        <p class="text-sm text-gray-600 mb-6">Halaman demo tanpa backend. Isi nama untuk masuk cepat.</p>
+
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label class="text-sm font-medium text-gray-700">Nama</label>
+                <input id="name" type="text" placeholder="Nama kamu" class="mt-1 block w-full border rounded-lg px-3 py-2" required>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700">Kata Sandi (demo)</label>
+                <div class="relative">
+                    <input id="password" type="password" placeholder="Minimal 4 karakter" class="mt-1 block w-full border rounded-lg px-3 py-2" required>
+                    <button type="button" id="toggle-password" class="absolute right-2 top-2 text-gray-500">Tampil</button>
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="inline-flex items-center text-sm">
+                    <input id="remember" type="checkbox" class="mr-2">
+                    Ingat saya
+                </label>
+                <a href="index.html" class="text-sm text-blue-700 hover:underline">Kembali ke beranda</a>
+            </div>
+
+            <div>
+                <button id="submit-btn" type="submit" class="w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-blue-800">Masuk</button>
+            </div>
+
+            <p id="error" class="text-sm text-red-600 hidden"></p>
+
+            <p class="text-xs text-gray-500 mt-2">
+                Catatan: Ini hanya demo client-side. Kamu akan disimpan ke localStorage. Contoh kredensial bebas.
+            </p>
+        </form>
+    </div>
+
+    <script>
+        // read returnUrl from query string
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        const form = document.getElementById('login-form');
+        const nameInput = document.getElementById('name');
+        const passInput = document.getElementById('password');
+        const remember = document.getElementById('remember');
+        const errEl = document.getElementById('error');
+        const toggle = document.getElementById('toggle-password');
+
+        toggle.addEventListener('click', () => {
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggle.textContent = 'Sembunyi';
+            } else {
+                passInput.type = 'password';
+                toggle.textContent = 'Tampil';
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            errEl.classList.add('hidden');
+            const name = nameInput.value.trim();
+            const pass = passInput.value;
+
+            if (!name) {
+                showError('Nama wajib diisi.');
+                return;
+            }
+            if (!pass || pass.length < 4) {
+                showError('Kata sandi minimal 4 karakter.');
+                return;
+            }
+
+            // create a minimal user object
+            const user = {
+                name: name,
+                loggedAt: new Date().toISOString()
+            };
+
+            // if remember checked, persist; otherwise also persist (demo) but can be changed
+            try {
+                localStorage.setItem('matif_user', JSON.stringify(user));
+            } catch (err) {
+                showError('Gagal menyimpan sesi. Periksa pengaturan browser.');
+                return;
+            }
+
+            // redirect to returnUrl if present
+            const returnUrl = getQueryParam('returnUrl');
+            if (returnUrl) {
+                // simple safety: allow same-origin only
+                try {
+                    const decoded = decodeURIComponent(returnUrl);
+                    const url = new URL(decoded, window.location.origin);
+                    if (url.origin === window.location.origin) {
+                        window.location.href = decoded;
+                        return;
+                    }
+                } catch (e) {
+                    // ignore and fallback
+                }
+            }
+
+            // fallback to homepage
+            window.location.href = 'index.html';
+        });
+
+        function showError(msg) {
+            errEl.textContent = msg;
+            errEl.classList.remove('hidden');
+        }
+
+        // if already logged in, redirect back or to home
+        (function prefillAndRedirectIfNeeded() {
+            try {
+                const user = JSON.parse(localStorage.getItem('matif_user') || 'null');
+                if (user && user.name) {
+                    const returnUrl = getQueryParam('returnUrl');
+                    if (returnUrl) {
+                        window.location.href = decodeURIComponent(returnUrl);
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+        })();
+    </script>
+</body>
+</html>
